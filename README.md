@@ -8,3 +8,5 @@ Controls:
 - Zoom out with button 5 (X on kbd)
 
 My first PICO-8 Cart! Eventually I'd like to add different color schemes, and maybe Julia sets.
+
+Play around with it here: https://lexaloffle.com/bbs/?tid=33254
