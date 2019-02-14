@@ -70,13 +70,20 @@ function advance()
 	if done then
 		return 0
 	end
+	// render current chunk
 	pcx=chunk_tlx+(chunk_size/2)
 	pcy=chunk_tly+(chunk_size/2)
 	cc_re=(((pcx-64)/128)*scale)+vc_re
 	cc_im=(((pcy-64)/128)*scale)+vc_im
 	m=mandelbrot(cc_re, cc_im, max_i/chunk_size)
-	rectfill(chunk_tlx, chunk_tly, chunk_tlx+chunk_size, chunk_tly+chunk_size, 15-m)
+	color=(15-(m%16))
+	if chunk_size>1 then
+		rectfill(chunk_tlx, chunk_tly, chunk_tlx+chunk_size-1, chunk_tly+chunk_size-1, color)
+	else
+		pset(chunk_tlx, chunk_tly, color)
+	end
 	
+	//advance state to next chunk or detect when done
 	chunk_tlx+=chunk_size
 	if chunk_tlx>=128 then
 		chunk_tlx=0
