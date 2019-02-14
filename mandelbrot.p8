@@ -3,6 +3,11 @@ version 16
 __lua__
 epsilon=0.001
 
+bw_palette={0,1,1,1,5,5,5,5,6,6,6,6,7,7,7,7}
+wb_palette={7,6,6,6,5,5,5,5,1,1,1,1,0,0,0,0}
+roygbiv_palette={0,8,8,9,9,10,10,11,11,3,12,12,1,1,2,2}
+vibgyor_palette={0,2,2,1,1,12,12,3,11,11,10,10,9,9,8,8}
+
 function _init()
 	reset()
 	vc_re=0
@@ -11,6 +16,10 @@ function _init()
 	pan_speed=0.05
 	zoom_fac=1.1
 	work_per_frame=4096
+	shading_mode=0
+	num_shading_modes=2
+	palette=0
+	num_palettes=5
 end
 
 function _draw()
@@ -56,6 +65,16 @@ function input()
 		end
 		reset()
 	end
+	if btnp(4, 1) then
+		shading_mode+=1
+		shading_mode%=num_shading_modes
+		reset()
+	end
+	if btnp(5, 1) then
+		palette+=1
+		palette%=num_palettes
+		set_palette_by_index(palette)
+	end
 end
 
 function reset()
@@ -75,12 +94,19 @@ function advance()
 	pcy=chunk_tly+(chunk_size/2)
 	cc_re=(((pcx-64)/128)*scale)+vc_re
 	cc_im=(((pcy-64)/128)*scale)+vc_im
-	m=mandelbrot(cc_re, cc_im, max_i/chunk_size)
-	color=(15-(m%16))
+	lim=max_i/chunk_size
+	m=mandelbrot(cc_re, cc_im, lim)
+	if shading_mode==0 then
+		// repeat shading (gets noisy at high detail)
+		shade=(15-(m%16))
+	elseif shading_mode==1 then
+		// fractional shading (less detail when function is sparse)
+		shade=15-ceil((m/lim)*15)
+	end
 	if chunk_size>1 then
-		rectfill(chunk_tlx, chunk_tly, chunk_tlx+chunk_size-1, chunk_tly+chunk_size-1, color)
+		rectfill(chunk_tlx, chunk_tly, chunk_tlx+chunk_size-1, chunk_tly+chunk_size-1, shade)
 	else
-		pset(chunk_tlx, chunk_tly, color)
+		pset(chunk_tlx, chunk_tly, shade)
 	end
 	
 	//advance state to next chunk or detect when done
@@ -102,6 +128,30 @@ function advance()
 	end
 	// add 8 to account for rendering overhead
 	return m+8
+end
+
+function set_palette_by_index(palette_index)
+	if palette_index==0 then
+		pal()
+	elseif palette_index==1 then
+		// black to white gradient
+		swap_to_palette(bw_palette)
+	elseif palette_index==2 then
+		// white to black gradient
+		swap_to_palette(wb_palette)
+	elseif palette_index==3 then
+		// rainbow!
+		swap_to_palette(roygbiv_palette)
+	elseif palette_index==4 then
+		// rainbow!
+		swap_to_palette(vibgyor_palette)
+	end
+end
+
+function swap_to_palette(palette_list)
+	for i=0,(#palette_list-1) do
+		pal(i, palette_list[i], 1)
+	end
 end
 
 function mandelbrot(re0, im0, lim)
